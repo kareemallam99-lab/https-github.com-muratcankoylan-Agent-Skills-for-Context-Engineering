@@ -77,3 +77,26 @@ Progressive disclosure pattern: only skill names/descriptions load at startup; f
 - **Sub-agents isolate context** — they exist to manage attention budget, not simulate org roles
 - **Skills reference each other** — use plain text skill names (not links) in Integration sections to avoid cross-directory reference issues
 - **Examples use Python pseudocode** — conceptual demonstrations that work across environments, not production-ready implementations
+
+## Active Directives (auto-applied in every session in this repo)
+
+### Context Compression
+Apply context-compression in every session:
+- Trigger compaction at 70-80% context utilization, not when the window fills.
+- Use structured summaries with sections: Session Intent, Files Modified, Decisions Made, Current State, Next Steps.
+- Maintain a separate artifact index for file paths, function names, error codes — summaries lose these first.
+- Optimize for tokens-per-task, not tokens-per-request.
+- For coding work, retain the last ~20 turns verbatim and compress older history.
+
+### Excel (.xlsx) Files
+- Never load full sheets into context. Read structure first (sheet names, shape, column headers), then load only what's needed.
+- For inspection: report `df.shape`, `df.columns`, `df.head(5)`, `df.dtypes` instead of dumping the whole DataFrame.
+- For transformations: stream row-by-row; write intermediate results to disk.
+- Default tools: `pandas.read_excel(..., sheet_name=None, nrows=N)` for previewing, `openpyxl` for cell-level edits.
+
+### Context Optimization
+Apply in risk order:
+1. **KV-cache**: stable content (system prompt, tools, conventions) first; dynamic content (history, user message) last. Never modify the stable prefix. No timestamps in system prompts. Target 70%+ cache hit rate.
+2. **Observation masking**: replace verbose tool outputs with compact references once processed. Retain the 5 most recently accessed files in full.
+3. **Compaction**: trigger at 70-80% utilization. Target 50-70% reduction with <5% quality loss. Validate via probe testing.
+4. **Partitioning**: only when context exceeds 60% of window and there are 3+ truly independent subtasks. Budget 2k-5k tokens per sub-agent boundary.
